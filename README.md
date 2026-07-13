@@ -1,6 +1,22 @@
 # Automated Container Security Pipeline (DevSecOps Gatekeeper)
 
-An automated CI/CD security pipeline designed to enforce vulnerability gating before container images are deployed to cloud environments. This project demonstrates "shifting security left" by intercepting insecure code before it pollutes a private registry.
+An automated, cloud-native CI/CD security pipeline designed to enforce vulnerability gating before container images are deployed to cloud environments. This project demonstrates the practical implementation of **"Shifting Security Left"** by intercepting insecure configurations at the automated testing phase, preventing image registry pollution.
+
+---
+
+## 🚀 Architecture & Workflow
+
+The pipeline utilizes an automated checklist that executes sequentially on a fresh cloud-hosted runner for every code commit:
+
+```text
+ [Code Push] ──> [Build Local Docker Image] ──> [Trivy Security Scan]
+                                                        │
+                                        ┌───────────────┴───────────────┐
+                                   (Passes Scan)                  (Fails Scan)
+                                        │                               │
+                                        ▼                               ▼
+                           [Push to Azure Registry]          [Pipeline Terminated]
+                                                             (Registry Protected!)
 
 ## 🚀 Architecture & Workflow
 1. **Code Commit:** Developer pushes code to GitHub.
