@@ -18,28 +18,42 @@ The pipeline utilizes an automated checklist that executes sequentially on a fre
                            [Push to Azure Registry]          [Pipeline Terminated]
                                                              (Registry Protected!)
 
-## 🚀 Architecture & Workflow
-1. **Code Commit:** Developer pushes code to GitHub.
-2. **Build Stage:** GitHub Actions runner provisions an environment and builds the Docker image locally.
-3. **Security Gate (Trivy):** The image is scanned for **CRITICAL** vulnerabilities. If any are found, the pipeline fails with a non-zero exit code and terminates.
-4. **Secure Push:** If the scan passes, the image is securely pushed to Azure Container Registry (ACR).
+Code Checkout: GitHub Actions provisions an isolated Ubuntu runner and checks out the source code repository.
 
-## 🛠️ Tech Stack & Tools
-* **CI/CD Platform:** GitHub Actions
-* **Security Scanner:** Aqua Security Trivy
-* **Containerization:** Docker
-* **Cloud Infrastructure:** Azure Container Registry (ACR)
+ACR Authentication: Securely authenticates with the cloud environment using encrypted repository secrets (ACR_LOGIN_SERVER, ACR_USERNAME, ACR_PASSWORD).
 
-## 🧪 Validation & Testing Scenarios
-To validate the effectiveness of the gatekeeper, two distinct scenarios were tested:
+Local Compilation: Builds the container image locally on the runner's ephemeral drive using the Dockerfile configuration.
 
-### Scenario A: Secure Code Path (`main` branch)
-* **Base Image:** `python:3.11-slim`
-* **Result:** 0 CRITICAL vulnerabilities detected. The pipeline successfully completed and pushed the image to ACR.
+Automated Security Gate (Trivy): Evaluates the filesystem and dependencies of the built container image against current CVE databases.
 
-### Scenario B: Insecure Code Path (`vulnerable` branch)
-* **Base Image:** `python:3.6`
-* **Result:** Multiple CRITICAL vulnerabilities caught. The pipeline broke deliberately, safely blocking the image from deployment.
+Conditional Deployment: Uses a logical gating condition (if: success()). If the image contains zero severe security bugs, it ships to storage. If a threat is detected, the workflow returns a non-zero exit code (exit-code: 1), breaking the build instantly.
 
-## 📁 Evidence & Artifacts
-The results of the isolation mechanism can be verified in the pipeline history and registry storage logs. Only the secure image tag from the `main` branch is permitted entry into the cloud repository.
+🛠️ Technical Stack & Frameworks
+CI/CD Orchestration: GitHub Actions
+
+Static Application Security Testing (SAST) / Container Scanning: Aqua Security Trivy (v0.36.0)
+
+Containerization Engine: Docker Core
+
+Cloud Infrastructure Environment: Azure Container Registry (ACR)
+
+🧪 Validation & Test Scenarios
+To verify the enforcement capabilities of the security gatekeeper, the workflow was rigorously tested across two distinct operational scenarios:
+
+🟢 Scenario A: Compliant Production Path (main branch)
+Base Configuration: FROM python:3.11-slim
+
+Vulnerability Assessment: Retrospectively clean image layer baseline.
+
+Scan Result: 0 CRITICAL vulnerabilities found.
+
+Pipeline Status: PASSED (Green). Image successfully authenticated and pushed to Azure Container Registry.
+
+🔴 Scenario B: Non-Compliant/Legacy Path (vulnerable branch)
+Base Configuration: FROM python:3.6
+
+Vulnerability Assessment: Inherited multiple unpatched high-severity CVE dependencies due to an outdated runtime environment.
+
+Scan Result: Multiple CRITICAL vulnerabilities identified.
+
+Pipeline Status: FAILED (Red). The gatekeeper successfully aborted the process, isolating the threat and blocking transmission to Azure.
