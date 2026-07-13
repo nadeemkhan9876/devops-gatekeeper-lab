@@ -37,7 +37,7 @@ jobs:
       # exit-code: '1' -> Creates a pipeline FAILURE if vulns are found.
       # severity: 'CRITICAL' -> Only blocks for Critical issues.
       - name: Run Trivy Security Scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: '${{ secrets.ACR_LOGIN_SERVER }}/vulnerable-app:${{ github.sha }}'
           format: 'table'
